@@ -11,7 +11,7 @@ from tkinter import ttk
 
 class FlightProgram:
     def __init__(self):
-        self.table_row = 17
+        self.table_row = 21
         self.root = tk.Tk()
         self.root.geometry("1200x800")
         self.root.title("CSCI 431 - Antonio Santos Final Project")
@@ -136,7 +136,6 @@ class FlightProgram:
                 command = showNext50Rows).grid(
                         row = self.table_row+4,columnspan=3, column = 1)
 
-#        countLabel = Label(self.root, text="Showing " + str(self.showingCount) + " out of " + str(self.leftCount))
         self.countLabel.grid(row = self.table_row+5,columnspan=3, column = 1)
 
 
@@ -162,7 +161,9 @@ class FlightProgram:
 
     def filter(self):
         originCityNamesList = self.filtered_df['ORIGIN_CITY_NAME'].unique().tolist()
+        originStateNamesList = self.filtered_df['ORIGIN_STATE_NM'].unique().tolist()
         destCityNamesList = self.filtered_df['DEST_CITY_NAME'].unique().tolist()
+        destStateNamesList = self.filtered_df['DEST_STATE_NM'].unique().tolist()
         monthsList = self.filtered_df['MONTH'].unique().tolist()
         yearsList = self.filtered_df['YEAR'].unique().tolist()
         carrierNamesList = self.filtered_df['UNIQUE_CARRIER_NAME'].unique().tolist()
@@ -170,30 +171,48 @@ class FlightProgram:
         def filterOriginCityName(event):
             print("sorting by origin city name...")
             self.filtered_df = self.filtered_df.loc[self.filtered_df['ORIGIN_CITY_NAME'] == originCityNames.get()]
-            updateLists(originCityNames,destinationCityNames,months,years,carrierNames,distances)
+            updateLists(originCityNames,originStateNames,destinationCityNames,destinationStateNames,months,years,carrierNames,distances)
+        
+        
+        def filterOriginStateName(event):
+            print("sorting by origin state name...")
+            self.filtered_df = self.filtered_df.loc[self.filtered_df['ORIGIN_STATE_NM'] == originStateNames.get()]
+            updateLists(originCityNames,originStateNames,destinationCityNames,destinationStateNames,months,years,carrierNames,distances)
+
         
         def filterDestCityName(event):
             print("sorting by destination city name...")
             self.filtered_df = self.filtered_df.loc[self.filtered_df['DEST_CITY_NAME'] == destinationCityNames.get()]
-            updateLists(originCityNames,destinationCityNames,months,years,carrierNames,distances)
+            updateLists(originCityNames,originStateNames,destinationCityNames,destinationStateNames,months,years,carrierNames,distances)
+        
+        
+        def filterDestStateName(event):
+            print("sorting by destination state name...")
+            self.filtered_df = self.filtered_df.loc[self.filtered_df['DEST_STATE_NM'] == destinationStateNames.get()]
+            updateLists(originCityNames,originStateNames,destinationCityNames,destinationStateNames,months,years,carrierNames,distances)
+
+
 
 
         def filterMonth(event):
             print("sorting by month...")            
             self.filtered_df = self.filtered_df.loc[self.filtered_df['MONTH'] == months.get()]
-            updateLists(originCityNames,destinationCityNames,months,years,carrierNames,distances)
+            updateLists(originCityNames,originStateNames,destinationCityNames,destinationStateNames,months,years,carrierNames,distances)
+
 
         
         def filterYear(event):
             print("sorting by year...")            
             self.filtered_df = self.filtered_df.loc[self.filtered_df['YEAR'] == int(years.get())]
-            updateLists(originCityNames,destinationCityNames,months,years,carrierNames,distances)
+            updateLists(originCityNames,originStateNames,destinationCityNames,destinationStateNames,months,years,carrierNames,distances)
+
 
         
         def filterCarrierName(event):
             print("sorting by carrier name...")            
             self.filtered_df = self.filtered_df.loc[self.filtered_df['UNIQUE_CARRIER_NAME'] == carrierNames.get()]
-            updateLists(originCityNames,destinationCityNames,months,years,carrierNames,distances)
+            updateLists(originCityNames,originStateNames,destinationCityNames,destinationStateNames,months,years,carrierNames,distances)
+
 
 
         def filterDistance(event):
@@ -205,10 +224,10 @@ class FlightProgram:
                 dRange = map(int,distance.split("-", 1))
                 print(dRange)
                 self.filtered_df = self.df.loc[self.df['DISTANCE'].isin(dRange)]
-            updateLists(originCityNames,destinationCityNames,months,years,carrierNames,distances)
+            updateLists(originCityNames,originStateNames,destinationCityNames,destinationStateNames,months,years,carrierNames,distances)
 
         
-        def updateLists(originCityNames,destinationCityNames,months,years,carrierNames,distances):
+        def updateLists(originCityNames,originStateNames,destinationCityNames,destinationStateNames,months,years,carrierNames,distances):
             self.showingCount = 0
             self.leftCount = self.filtered_df['DISTANCE'].count()
             self.countLabel.config(text = "Showing " + str(self.showingCount) + " out of " + str(self.leftCount))
@@ -216,13 +235,17 @@ class FlightProgram:
             
             print("------------------------------------------------------------------\nupdating lists...")
             originCityNamesList = self.filtered_df['ORIGIN_CITY_NAME'].unique().tolist()
+            originStateNamesList = self.filtered_df['ORIGIN_STATE_NM'].unique().tolist()
             destCityNamesList = self.filtered_df['DEST_CITY_NAME'].unique().tolist()
+            destStateNamesList = self.filtered_df['DEST_STATE_NM'].unique().tolist()
             monthsList = self.filtered_df['MONTH'].unique().tolist()
             yearsList = self.filtered_df['YEAR'].unique().tolist()
             carrierNamesList = self.filtered_df['UNIQUE_CARRIER_NAME'].unique().tolist()
             
             print(originCityNamesList)
+            print(originStateNamesList)
             print(destCityNamesList)
+            print(destStateNamesList)
             print(monthsList)
             print(yearsList)
             print(carrierNamesList)
@@ -230,7 +253,9 @@ class FlightProgram:
             
             #update lists in combobox's
             originCityNames['values'] = originCityNamesList
+            originStateNames['values'] = originStateNamesList
             destinationCityNames['values'] = destCityNamesList
+            destinationStateNames['values'] = destStateNamesList
             months['values'] = monthsList
             years['values'] = yearsList
             carrierNames['values'] = carrierNamesList
@@ -268,18 +293,22 @@ class FlightProgram:
             self.showingCount = 0
             self.leftCount = self.df['DISTANCE'].count()
             self.filtered_df = self.df
-            updateLists(originCityNames,destinationCityNames,months,years,carrierNames,distances)
+            updateLists(originCityNames,originStateNames,destinationCityNames,destinationStateNames,months,years,carrierNames,distances)
 
             #reset what is being pointed at to be the default first value
             originCityNames.set('')
-            destinationCityNames.set('')
+            originStateNames.set('')
+            destinationStateNames.set('')
+            destinationStateNames.set('')
             months.set('')
             years.set('')
             carrierNames.set('')
             distances.set('')
 
         print(originCityNamesList)
+        print(originStateNamesList)
         print(destCityNamesList)
+        print(destStateNamesList)
         print(monthsList)
         print(yearsList)
         print(carrierNamesList)
@@ -287,22 +316,35 @@ class FlightProgram:
         
 
 #DISTANCES 
-        distanceLabel = tk.Label(self.root,text = "Travel Distance").grid(columnspan=3,column=0, row=self.table_row-14)
+        distanceLabel = tk.Label(self.root,text = "Travel Distance").grid(columnspan=3,column=0, row=self.table_row-18)
         distances = ttk.Combobox(self.root, values=distancesList)
-        distances.grid(columnspan=3,column=0, row=self.table_row-13)
+        distances.grid(columnspan=3,column=0, row=self.table_row-17)
         distances.bind("<<ComboboxSelected>>", filterDistance)
 
 #ORIGIN CITY NAMES
-        originCityNamesLabel = tk.Label(self.root, text = "Choose Origin City Name").grid(columnspan=3,column=0, row=self.table_row-12)
+        originCityNamesLabel = tk.Label(self.root, text = "Choose Origin City Name").grid(columnspan=3,column=0, row=self.table_row-16)
         originCityNames = ttk.Combobox(self.root, values=originCityNamesList)
-        originCityNames.grid(columnspan=3,column=0, row=self.table_row-11)
+        originCityNames.grid(columnspan=3,column=0, row=self.table_row-15)
         originCityNames.bind("<<ComboboxSelected>>", filterOriginCityName)
 
+#ORIGIN STATE NAMES
+        originStateNamesLabel = tk.Label(self.root, text = "Choose Origin State Name").grid(columnspan=3,column=0, row=self.table_row-14)
+        originStateNames = ttk.Combobox(self.root, values=originStateNamesList)
+        originStateNames.grid(columnspan=3,column=0, row=self.table_row-13)
+        originStateNames.bind("<<ComboboxSelected>>", filterOriginStateName)
+
 #DEST CITY NAMES
-        destinationCityNamesLabel = tk.Label(self.root, text = "Choose Destination City Name").grid(columnspan=3,column=0, row=self.table_row-10)
+        destinationCityNamesLabel = tk.Label(self.root, text = "Choose Destination City Name").grid(columnspan=3,column=0, row=self.table_row-12)
         destinationCityNames = ttk.Combobox(self.root, values=destCityNamesList)
-        destinationCityNames.grid(columnspan=3,column=0, row=self.table_row-9)
+        destinationCityNames.grid(columnspan=3,column=0, row=self.table_row-11)
         destinationCityNames.bind("<<ComboboxSelected>>", filterDestCityName)
+
+#DEST STATE NAMES
+        destinationStateNamesLabel = tk.Label(self.root, text = "Choose Destination State Name").grid(columnspan=3,column=0, row=self.table_row-10)
+        destinationStateNames = ttk.Combobox(self.root, values=destStateNamesList)
+        destinationStateNames.grid(columnspan=3,column=0, row=self.table_row-9)
+        destinationStateNames.bind("<<ComboboxSelected>>", filterDestStateName)
+
 
 #MONTHS
         monthsLabel = tk.Label(self.root,text = "Choose Month").grid(columnspan=3,column=0, row=self.table_row-8)
