@@ -11,7 +11,7 @@ from tkinter import ttk
 
 class FlightProgram:
     def __init__(self):
-        self.table_row = 15
+        self.table_row = 17
         self.root = tk.Tk()
         self.root.geometry("1200x800")
         self.root.title("CSCI 431 - Antonio Santos Final Project")
@@ -21,8 +21,12 @@ class FlightProgram:
         self.filtered_df = self.df
         self.dfLeft = self.df
         self.showingCount = 0
+        self.leftCount = self.df['DISTANCE'].count()
         #initialize table view
         self.frame = tk.Frame(self.root)
+        self.countLabel = Label(self.root, text="Showing " + str(self.showingCount) + " out of " + str(self.leftCount))
+        self.resultLabel = ttk.Label(self.root)
+        
         self.frame.grid(row=self.table_row,column=0,columnspan=3)
         self.tree = ttk.Treeview(self.frame, columns = ('Distance','Carrier Name','Origin','Destination','Month','Success Rates'))
         #self.countLabel = Label(self.root, text="Showing " + str(self.showingCount) + " out of " + str(self.dfLeft["MONTH"].count())).grid(
@@ -40,7 +44,7 @@ class FlightProgram:
         
         self.filterBtn = ttk.Button(self.root, text = "Filter", 
                 command = self.filter).grid(
-                        row = 1, column = 0)
+                        row = 1, columnspan=3, column = 0)
         self.root.mainloop()
 
     def generate_preset_table(self,root):
@@ -56,11 +60,10 @@ class FlightProgram:
         #TODO: Fix error below. sorting is not working and i am gtting the lowest value from the list each time.
         top_month = ranked_months.loc[ranked_months['MONTHLY_TOTAL_SUCCESS_RATES'].idxmax()]
 
-        #output the result
-        l = ttk.Label(root, text="According to our calculations, the best month to take a trip is " + str(int(top_month['MONTH'])) + " with a success rate of " + str(top_month['MONTHLY_TOTAL_SUCCESS_RATES']))
         
         #display the table
-        l.grid(row=self.table_row-1,column=0)
+        self.resultLabel['text'] = "According to our calculations, the best month to take a trip is " + str(int(top_month['MONTH'])) + " with a success rate of " + str(top_month['MONTHLY_TOTAL_SUCCESS_RATES'])
+        self.resultLabel.grid(row=self.table_row-1,column=0)
         df_new = df_new.sort_values(by=['SUCCESS_RATES'],ascending=True)
         self.insert_table(df_new,root)
  
@@ -108,7 +111,8 @@ class FlightProgram:
             self.showingCount = self.showingCount + 1
             if(i == limit):
                 break
-
+        self.countLabel.config(text = "Showing " + str(self.showingCount) + " out of " + str(self.leftCount))
+        
 
         def showNext50Rows():
             limit = 50 
@@ -117,21 +121,23 @@ class FlightProgram:
             for index,row in self.dfLeft.iterrows():
                 self.tree.insert('', 'end', text=index,values = (row['DISTANCE'], row['UNIQUE_CARRIER_NAME'],row['ORIGIN_CITY_NAME'], row['DEST_CITY_NAME'], row['MONTH'], row['SUCCESS_RATES']) )
                 dfLeftTemp = dfLeftTemp.drop(index)
+
                 i = i+1
                 self.showingCount = self.showingCount + 1
                 if(i == limit):
-                    self.dfLeft = dfLeftTemp
-                    countLabel.config(text = "Showing " + str(self.showingCount) + " out of " + str(self.df["MONTH"].count()))
+                    #self.dfLeft = dfLeftTemp
+                    #print(self.dfLeft)
                     break
-
+            self.dfLeft = dfLeftTemp
+            self.countLabel.config(text = "Showing " + str(self.showingCount) + " out of " + str(self.leftCount))
 
         
         showNext50RowsBtn = ttk.Button(self.root, text = "Next 50", 
                 command = showNext50Rows).grid(
-                    row = self.table_row+4, column = 1)
+                        row = self.table_row+4,columnspan=3, column = 1)
 
-        countLabel = Label(self.root, text="Showing " + str(self.showingCount) + " out of " + str(self.df["MONTH"].count()))
-        countLabel.grid(row = self.table_row+5, column = 1)
+#        countLabel = Label(self.root, text="Showing " + str(self.showingCount) + " out of " + str(self.leftCount))
+        self.countLabel.grid(row = self.table_row+5,columnspan=3, column = 1)
 
 
 
@@ -160,38 +166,54 @@ class FlightProgram:
         monthsList = self.filtered_df['MONTH'].unique().tolist()
         yearsList = self.filtered_df['YEAR'].unique().tolist()
         carrierNamesList = self.filtered_df['UNIQUE_CARRIER_NAME'].unique().tolist()
+        distancesList = ['0-99','100-199','200-299','300-399','400-499','500-999','1000-1499','1500-1999','2000-2499','2500-2999','3000+']
         def filterOriginCityName(event):
             print("sorting by origin city name...")
-            #self.filters["OCN"] = originCityNames.get()
             self.filtered_df = self.filtered_df.loc[self.filtered_df['ORIGIN_CITY_NAME'] == originCityNames.get()]
-            updateLists(originCityNames,destinationCityNames,months,years,carrierNames)
+            updateLists(originCityNames,destinationCityNames,months,years,carrierNames,distances)
         
         def filterDestCityName(event):
             print("sorting by destination city name...")
-            #self.filters["DCN"] = destCityNames.get()  
             self.filtered_df = self.filtered_df.loc[self.filtered_df['DEST_CITY_NAME'] == destinationCityNames.get()]
-            updateLists(originCityNames,destinationCityNames,months,years,carrierNames)
+            updateLists(originCityNames,destinationCityNames,months,years,carrierNames,distances)
+
 
         def filterMonth(event):
             print("sorting by month...")            
-            #self.filters["MON"] = months.get()  
             self.filtered_df = self.filtered_df.loc[self.filtered_df['MONTH'] == months.get()]
-            updateLists(originCityNames,destinationCityNames,months,years,carrierNames)
+            updateLists(originCityNames,destinationCityNames,months,years,carrierNames,distances)
+
         
         def filterYear(event):
             print("sorting by year...")            
-            #self.filters["YEA"] = years.get()  
-            self.filtered_df = self.filtered_df.loc[self.filtered_df['YEAR'] == years.get()]
-            updateLists(originCityNames,destinationCityNames,months,years,carrierNames)
+            self.filtered_df = self.filtered_df.loc[self.filtered_df['YEAR'] == int(years.get())]
+            updateLists(originCityNames,destinationCityNames,months,years,carrierNames,distances)
+
         
         def filterCarrierName(event):
             print("sorting by carrier name...")            
-            #self.filters["CNA"] = carrierNames.get()    
             self.filtered_df = self.filtered_df.loc[self.filtered_df['UNIQUE_CARRIER_NAME'] == carrierNames.get()]
-            updateLists(originCityNames,destinationCityNames,months,years,carrierNames)
+            updateLists(originCityNames,destinationCityNames,months,years,carrierNames,distances)
+
+
+        def filterDistance(event):
+            print("sorting by distance...")
+            distance = distances.get()
+            if(distance == '3000+'):
+                self.filtered_df = self.df.loc[self.df['DISTANCE'] > 3000]
+            else:
+                dRange = map(int,distance.split("-", 1))
+                print(dRange)
+                self.filtered_df = self.df.loc[self.df['DISTANCE'].isin(dRange)]
+            updateLists(originCityNames,destinationCityNames,months,years,carrierNames,distances)
+
         
-        
-        def updateLists(originCityNames,destinationCityNames,months,years,carrierNames):
+        def updateLists(originCityNames,destinationCityNames,months,years,carrierNames,distances):
+            self.showingCount = 0
+            self.leftCount = self.filtered_df['DISTANCE'].count()
+            self.countLabel.config(text = "Showing " + str(self.showingCount) + " out of " + str(self.leftCount))
+
+            
             print("------------------------------------------------------------------\nupdating lists...")
             originCityNamesList = self.filtered_df['ORIGIN_CITY_NAME'].unique().tolist()
             destCityNamesList = self.filtered_df['DEST_CITY_NAME'].unique().tolist()
@@ -212,67 +234,41 @@ class FlightProgram:
             months['values'] = monthsList
             years['values'] = yearsList
             carrierNames['values'] = carrierNamesList
+            distances['values'] = distancesList
            
 
             self.tree.delete(*self.tree.get_children())
+
+
             #next, cleanse the dataset of rows we dont want
             self.filtered_df = self.cleanseData(self.filtered_df)
 
-            #next, calculate the flight ranks using my own model to determine what is the best flight. append the flight rank to a success rate column
-            filtered_df_new = self.calculate_success_rates(self.filtered_df)
+            if(self.filtered_df.empty == False):
+                #next, calculate the flight ranks using my own model to determine what is the best flight. append the flight rank to a success rate column
+                filtered_df_new = self.calculate_success_rates(self.filtered_df)
 
-            #determine best month to travel based on model 
-            ranked_months = self.rank_month_performance(filtered_df_new)
+                #determine best month to travel based on model 
+                ranked_months = self.rank_month_performance(filtered_df_new)
 
-            #TODO: Fix error below. sorting is not working and i am gtting the lowest value from the list each time.
-            top_month = ranked_months.loc[ranked_months['MONTHLY_TOTAL_SUCCESS_RATES'].idxmax()]
+                top_month = ranked_months.loc[ranked_months['MONTHLY_TOTAL_SUCCESS_RATES'].idxmax()]
 
-            #output the result
-            l = ttk.Label(self.root, text="According to our calculations, the best month to take a trip is " + str(int(top_month['MONTH'])) + " with a success rate of " + str(top_month['MONTHLY_TOTAL_SUCCESS_RATES']))
-            
-            #display the table
-            l.grid(row=self.table_row-1,column=0)
-            filtered_df_new.sort_values(by=['SUCCESS_RATES'])
-            self.insert_table(filtered_df_new,self.root)
-
-
-#####
-        #    self.tree.delete(*self.tree.get_children())
-        #    scrolly = ttk.Scrollbar(self.frame, orient="vertical", command=self.tree.yview)
-        #    scrollx = ttk.Scrollbar(self.frame, orient="horizontal", command=self.tree.xview)
-
-        #    self.tree.grid(row=self.table_row,column=0,sticky=NSEW,pady=(10,0))
-        #    scrolly.grid(row=self.table_row,column=4,sticky=NS,pady=(10,0))#pack(side = 'right', fill = 'y')
-        #    scrollx.grid(row=self.table_row+2,column=0,sticky=EW)#pack(side = 'right', fill = 'y')           
-        #    self.tree.configure(yscrollcommand=scrolly.set)
-        #    self.tree.configure(xscrollcommand=scrollx.set)
-
-        #    #scroll = Scrollbar(root,orient="vertical",command=self.tree.yview)
-        #    #scroll.grid(row=7,column=5,sticky=NS,pady=(10,0))
-        #    self.tree.heading('#0', text="Id",anchor=W, command=lambda:self.treeview_sort_column(self.tree, "Id", False))
-        #    self.tree.heading('#1', text="Distance", command=lambda:self.treeview_sort_column(self.tree, "Distance", False))
-        #    self.tree.heading('#2', text="Carrier Name", command=lambda:self.treeview_sort_column(self.tree, "Carrier Name", False))
-        #    self.tree.heading('#3', text="Origin", command=lambda:self.treeview_sort_column(self.tree, "Origin", False))
-        #    self.tree.heading('#4', text="Destination", command=lambda:self.treeview_sort_column(self.tree, "Destination", False))
-        #    self.tree.heading('#5', text="Month", command=lambda:self.treeview_sort_column(self.tree, "Month", False))
-        #    self.tree.heading('#6', text="Success Rates", command=lambda:self.treeview_sort_column(self.tree, "Success Rates", False))
-
-        #    self.tree.column('#0', width = 80)
-        #    self.tree.column('#1', width = 80)
-        #    self.tree.column('#2', width = 275)
-        #    self.tree.column('#3', width = 175)
-        #    self.tree.column('#4', width = 175)
-        #    self.tree.column('#5', width = 60)
-        #    self.tree.column('#6', width = 175)
-
-        #    for index,row in self.filtered_df.iterrows():
-        #        self.tree.insert('', 'end', text=index,values = (row['DISTANCE'], row['UNIQUE_CARRIER_NAME'],row['ORIGIN_CITY_NAME'], row['DEST_CITY_NAME'], row['MONTH'], row['SUCCESS_RATES']) )
-
+                #output the result
+                self.resultLabel['text'] = "According to our calculations, the best month to take a trip is " + str(int(top_month['MONTH'])) + " with a success rate of " + str(top_month['MONTHLY_TOTAL_SUCCESS_RATES'])
+                filtered_df_new.sort_values(by=['SUCCESS_RATES'])
+                self.insert_table(filtered_df_new,self.root)
+                
+            else:
+                print(self.filtered_df.count())
+                self.resultLabel['text'] = "No results"
+                self.insert_table(self.filtered_df,self.root)
+                
 
             
         def resetSearch():
+            self.showingCount = 0
+            self.leftCount = self.df['DISTANCE'].count()
             self.filtered_df = self.df
-            updateLists(originCityNames,destinationCityNames,months,years,carrierNames)
+            updateLists(originCityNames,destinationCityNames,months,years,carrierNames,distances)
 
             #reset what is being pointed at to be the default first value
             originCityNames.set('')
@@ -280,84 +276,55 @@ class FlightProgram:
             months.set('')
             years.set('')
             carrierNames.set('')
+            distances.set('')
 
         print(originCityNamesList)
         print(destCityNamesList)
         print(monthsList)
         print(yearsList)
         print(carrierNamesList)
+        print(distancesList)
         
+
+#DISTANCES 
+        distanceLabel = tk.Label(self.root,text = "Travel Distance").grid(columnspan=3,column=0, row=self.table_row-14)
+        distances = ttk.Combobox(self.root, values=distancesList)
+        distances.grid(columnspan=3,column=0, row=self.table_row-13)
+        distances.bind("<<ComboboxSelected>>", filterDistance)
+
 #ORIGIN CITY NAMES
-        originCityNamesLabel = tk.Label(self.root, text = "Choose Origin City Name").grid(column=0, row=self.table_row-12)
+        originCityNamesLabel = tk.Label(self.root, text = "Choose Origin City Name").grid(columnspan=3,column=0, row=self.table_row-12)
         originCityNames = ttk.Combobox(self.root, values=originCityNamesList)
-        originCityNames.grid(column=0, row=self.table_row-11)
-        #originCityNames.current(1)
+        originCityNames.grid(columnspan=3,column=0, row=self.table_row-11)
         originCityNames.bind("<<ComboboxSelected>>", filterOriginCityName)
 
 #DEST CITY NAMES
-        destinationCityNamesLabel = tk.Label(self.root, text = "Choose Destination City Name").grid(column=0, row=self.table_row-10)
+        destinationCityNamesLabel = tk.Label(self.root, text = "Choose Destination City Name").grid(columnspan=3,column=0, row=self.table_row-10)
         destinationCityNames = ttk.Combobox(self.root, values=destCityNamesList)
-        destinationCityNames.grid(column=0, row=self.table_row-9)
-        #destinationCityNames.current(0)
+        destinationCityNames.grid(columnspan=3,column=0, row=self.table_row-9)
         destinationCityNames.bind("<<ComboboxSelected>>", filterDestCityName)
 
 #MONTHS
-        monthsLabel = tk.Label(self.root,text = "Choose Month").grid(column=0, row=self.table_row-8)
+        monthsLabel = tk.Label(self.root,text = "Choose Month").grid(columnspan=3,column=0, row=self.table_row-8)
         months = ttk.Combobox(self.root, values=monthsList)
-        months.grid(column=0, row=self.table_row-7)
-        #months.current(0)
+        months.grid(columnspan=3,column=0, row=self.table_row-7)
         months.bind("<<ComboboxSelected>>", filterMonth)
 
 #YEARS
-        yearsLabel = tk.Label(self.root,text = "Choose Year").grid(column=0, row=self.table_row-6)
+        yearsLabel = tk.Label(self.root,text = "Choose Year").grid(columnspan=3,column=0, row=self.table_row-6)
         years = ttk.Combobox(self.root, values=yearsList)
-        years.grid(column=0, row=self.table_row-5)
-        #years.current(0)
+        years.grid(columnspan=3,column=0, row=self.table_row-5)
         years.bind("<<ComboboxSelected>>", filterYear)
 
 #CARRIER NAME
-        carrierNamesLabel = tk.Label(self.root,text = "Choose Carrier Name").grid(column=0, row=self.table_row-4)
+        carrierNamesLabel = tk.Label(self.root,text = "Choose Carrier Name").grid(columnspan=3,column=0, row=self.table_row-4)
         carrierNames = ttk.Combobox(self.root, values=carrierNamesList)
-        carrierNames.grid(column=0, row=self.table_row-3)
-        #carrierNames.current(0)
+        carrierNames.grid(columnspan=3,column=0, row=self.table_row-3)
         carrierNames.bind("<<ComboboxSelected>>", filterCarrierName)
 
         self.submitFilters = ttk.Button(self.root, text = "Reset", 
                 command = resetSearch).grid(
-                        row = self.table_row-2, column = 0)
-
-
-  #  def filterTable(self):
-  #      filters = self.filters
-  #      new_df = self.df
-  #      print(filters)
-  #      for key, value in list(filters.items()):
-  #          if(key != ""):
-  #              if(key == "ONC"):
-  #                  new_df = self.df.loc[self.df['ORIGIN_CITY_NAME'] == value]
-  #                  return new_df;
-  #              if(key == "DCN"):
-  #                  new_df = self.df.loc[self.df['DEST_CITY_NAME'] == value]
-  #                  return new_df;
-  #              if(key == "MON"):
-  #                  new_df = self.df.loc[self.df['MONTH'] == value]
-  #                  return new_df;
-  #              if(key == "YEA"):
-  #                  new_df = self.df.loc[self.df['YEAR'] == value]
-  #                  return new_df;
-  #              if(key == "CNA"):
-  #                  new_df = self.df.loc[self.df['UNIQUE_CARRIER_NAME'] == value]
-  #                  return new_df;
-  #      #now, call the create table function to generate the new table with the new dataframe
-  #      self.filters = {
-  #          "OCN":"",
-  #          "DCN":"",
-  #          "MON":"",
-  #          "YEA":"",
-  #          "CNA":""
-  #      }
-
-  #      self.insert_table(new_df,self.root)
+                        row = self.table_row-2, column = 0,columnspan=3)
 
 
     def calculate_success_rates(self,df):
